@@ -51,98 +51,68 @@ float x_placeholder;
 float y_placeholder;
 
 /**************************************************************************/
+typedef struct sQ
+{
+  double x
+  double y
+  double z
+  double w
+} sQ;
+
+typedef struct sV
+{
+  double x
+  double y
+  double z
+} sV;
+
+struct sQ q_getconj(sQ* q)
+{
+  sQ qc;
+  qc.x = -q->x;
+  qc.y = -q->y;
+  qc.z = -q->z;
+  qc.w = q->w;
+  return qc;
+}
+
+struct sQ q_mult(sQ* q1, sQ* q2)
+{
+  sQ q;
+  q.w = q1->w * q2->w - (q1->x * q2->x + q1->y * q2->y + q1->z * q2->z);
+  q.x = q1->w * q2->x + q2->w * q1->x + q1->y * q2->z - q1->z * q2->y;
+  q.y = q1->w * q2->y + q2->w * q1->y + q1->z * q2->x - q1->x * q2->z;
+  q.z = q1->w * q2->z + q2->w * q1->z + q1->x * q2->y - q1->y * q2->x;
+  return q;
+}
+
+void rotate_v(sQ* q, sV* v)
+{
+  sQ r;
+  r.w = 0;
+  r.x = v->x;
+  r.y = v->y;
+  r.z = v->z;
+  sQ qc = q_getconj(q);
+  sQ qq = q_mult(&r, &qc);
+  sQ rq = q_mult(q, &qq);
+  v->x = rq.x;
+  v->y = rq.y;
+  v->z = rq.z;
+}
+
+/**************************************************************************/
 void sensor_data (float& x_value, float& y_value) {
   // Quaternion data
   imu::Quaternion quat = bno.getQuat();
-  imu::Quaternion quat_conjugate = bno.getQuat().conjugate();
+  // imu::Quaternion quat_conjugate = bno.getQuat().conjugate();
 
   // angular velocity vector
   imu::Vector<3> velocity = bno.getVector (Adafruit_BNO055::VECTOR_ACCELEROMETER);
 
-  typedef struct sQ
-  {
-    double x = quat.x;
-    double y = quat.y;
-    double z = quat.z;
-    double w = quat.w;
-  } sQ;
-
-  typedef struct sV
-  {
-    double x = velocity.x;
-    double y = velocity.y;
-    double z = velocity.z;
-  } sV;
-
-  sQ q_getconj(sQ* q)
-  {
-    sQ qc;
-    qc.x = -q->x;
-    qc.y = -q->y;
-    qc.z = -q->z;
-    qc.w = q->w;
-    return qc;
-  }
-
-  sQ q_mult(sQ* q1, sQ* q2)
-  {
-    sQ q;
-    q.w = q1->w * q2->w - (q1->x * q2->x + q1->y * q2->y + q1->z * q2->z);
-    q.x = q1->w * q2->x + q2->w * q1->x + q1->y * q2->z - q1->z * q2->y;
-    q.y = q1->w * q2->y + q2->w * q1->y + q1->z * q2->x - q1->x * q2->z;
-    q.z = q1->w * q2->z + q2->w * q1->z + q1->x * q2->y - q1->y * q2->x;
-    return q;
-  }
-
-  void rotate_v(sQ* q, sV* v)
-  {
-    sQ r;
-    r.w = 0;
-    r.x = v->x;
-    r.y = v->y;
-    r.z = v->z;
-    sQ qc = q_getconj(q);
-    sQ qq = q_mult(&r, &qc);
-    sQ rq = q_mult(q, &qq);
-    v->x = rq.x;
-    v->y = rq.y;
-    v->z = rq.z;
-  }
-
-
-  //Serial print
-  Serial.print(" x: ");
-  Serial.print(velocity.z(), 2);
-  Serial.print(" y: ");
-  Serial.print(velocity.y(), 2);
-  Serial.print(" z: ");
-  Serial.print(velocity.x(), 2);
-  Serial.print("\t");
-
-  // transformed angular velocity vector
-  // quat * velocity * quat_conjugate;
-  imu::Vector<3> velocity_transformed = bno.getQuat().rotateVector(velocity);
-
-  //Serial print
-  Serial.print(" transformed:  ");
-  Serial.print(" x: ");
-  Serial.print(velocity_transformed.z(), 2);
-  Serial.print(" y: ");
-  Serial.print(velocity_transformed.y(), 2);
-  Serial.print(" z: ");
-  Serial.print(velocity_transformed.x(), 2);
-  Serial.print("\t");
-
-  Serial.print("qW: ");
-  Serial.print(quat.w(), 2);
-  Serial.print(" qX: ");
-  Serial.print(quat.x(), 2);
-  Serial.print(" qY: ");
-  Serial.print(quat.y(), 2);
-  Serial.print(" qZ: ");
-  Serial.print(quat.z(), 2);
-  Serial.print("\n");
-
+  // rotate vector
+  rotate_v(&quat, &velocity);
+  
   // Updating variables
   // x_value = euler.x() * radius_to_degrees;
   // y_value = euler.y() * radius_to_degrees;
@@ -190,6 +160,16 @@ void loop(void)
   sensor_calibration ();
 
   sensor_data (x_placeholder, y_placeholder);
+
+  //Serial print
+  Serial.print(" x: ");
+  Serial.print(velocity.x(), 2);
+  Serial.print(" y: ");
+  Serial.print(velocity.y(), 2);
+  Serial.print(" z: ");
+  Serial.print(velocity.z(), 2);
+  Serial.print("\t");
+
   /*
     transform_sensor_data (x_placeholder, y_placeholder, x, y);
 
