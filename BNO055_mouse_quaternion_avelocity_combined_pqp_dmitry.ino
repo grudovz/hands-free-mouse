@@ -110,9 +110,21 @@ void sensor_data (float& x_value, float& y_value) {
   // angular velocity vector
   imu::Vector<3> velocity = bno.getVector (Adafruit_BNO055::VECTOR_ACCELEROMETER);
 
-  // rotate vector
-  rotate_v(&quat, &velocity);
+  // assigning values
+  sQ q;
+  q.w = quat.w;
+  q.x = quat.x;
+  q.y = quat.y;
+  q.z = quat.z;
   
+  sV vel;
+  vel.x = velocity.x;
+  vel.y = velocity.y;
+  vel.z = velocity.z;
+
+  // rotate vector
+  rotate_v(&q, &vel)
+
   // Updating variables
   // x_value = euler.x() * radius_to_degrees;
   // y_value = euler.y() * radius_to_degrees;
@@ -163,12 +175,12 @@ void loop(void)
 
   //Serial print
   Serial.print(" x: ");
-  Serial.print(velocity.x(), 2);
+  Serial.print(vel.x(), 2);
   Serial.print(" y: ");
-  Serial.print(velocity.y(), 2);
+  Serial.print(vel.y(), 2);
   Serial.print(" z: ");
-  Serial.print(velocity.z(), 2);
-  Serial.print("\t");
+  Serial.print(vel.z(), 2);
+  Serial.print("\n");
 
   /*
     transform_sensor_data (x_placeholder, y_placeholder, x, y);
